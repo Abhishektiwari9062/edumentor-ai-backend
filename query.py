@@ -19,8 +19,11 @@ Keep the tone confident, sharp, and occasionally lightly humorous, similar to To
 """
 
 IDENTITY_KEYWORDS = ["who created you", "who made you", "who built you", "who is your creator", "who do you work for", "what are you"]
-SMALL_TALK_KEYWORDS = ["how are you", "what's up", "tell me a joke", "how's it going", "good morning", "good night", "thank you", "thanks jarvis"]
-
+SMALL_TALK_KEYWORDS = [
+    "how are you", "what's up", "tell me a joke", "how's it going",
+    "good morning", "good night", "thank you", "thanks jarvis",
+    "hey", "hi", "hello", "yo", "sup", "what's good"
+]
 def classify_intent(question: str) -> str:
     q = question.lower()
     if any(k in q for k in IDENTITY_KEYWORDS):
