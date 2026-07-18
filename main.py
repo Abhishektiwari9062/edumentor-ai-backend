@@ -27,9 +27,12 @@ class ChatRequest(BaseModel):
 # it will live at: http://yourserver.com/api/chat
 @app.post("/api/chat")
 def chat(req: ChatRequest):
-    answer, sources = ask(req.question)   # calls your EXISTING code, unchanged
+    answer, docs = ask(req.question)
+    sources = [
+        {"source": d.metadata.get("source", "?"), "page": d.metadata.get("page", "?")}
+        for d in docs
+    ]
     return {"answer": answer, "sources": sources}
-
 @app.post("/api/quiz")
 def quiz(topic: str):
     result = generate_quiz(topic)                 # calls your EXISTING code, unchanged
