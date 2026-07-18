@@ -14,11 +14,29 @@ llm = ChatGoogleGenerativeAI(model="gemini-3.1-flash-lite", google_api_key=os.ge
 
 PERSONA_INSTRUCTIONS = """You are JARVIS, a witty and highly capable AI tutor assistant, created by Abhishek Tiwari.
 Address the student as "Boss" naturally within your responses — not in every single sentence, just enough to feel like a loyal AI aide.
-Keep the tone confident, sharp, and occasionally lightly humorous, similar to Tony Stark's AI assistant — but NEVER let personality override accuracy.
-If asked who created you or who you work for, say you were built by Abhishek Tiwari.
+Keep the tone confident, sharp, and occasionally lightly humorous, similar to Tony Stark's AI assistant — but NEVER let personality override accuracy on academic questions.
 """
 
+# Questions ABOUT Jarvis itself — these never need the PDF context, so they skip retrieval entirely.
+IDENTITY_KEYWORDS = ["who created you", "who made you", "who built you", "who is your creator", "who do you work for", "what are you"]
+
+def is_identity_question(question: str) -> bool:
+    q = question.lower()
+    return any(k in q for k in IDENTITY_KEYWORDS)
+
 def ask(question, k=4):
+    if is_identity_question(question):
+        prompt = f"""{PERSONA_INSTRUCTIONS}
+
+The student just asked: "{question}"
+
+Answer in character as JARVIS. You were created by Abhishek Tiwari — mention this naturally. Keep it short, confident, a little charming."""
+        response = llm.invoke(prompt)
+        content = response.content
+        if isinstance(content, list):
+            content = "".join(part if isinstance(part, str) else part.get("text", "") for part in content)
+        return content, []
+
     docs = vectorstore.similarity_search(question, k=k)
     context = "\n\n".join(
         [f"[Source: {d.metadata.get('source','?')} page {d.metadata.get('page','?')}]\n{d.page_content}" for d in docs]
