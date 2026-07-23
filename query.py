@@ -10,6 +10,11 @@ INDEX_DIR = "faiss_index"
 
 embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001", google_api_key=os.getenv("GOOGLE_API_KEY"))
 vectorstore = FAISS.load_local(INDEX_DIR, embeddings, allow_dangerous_deserialization=True)
+def reload_vectorstore():
+    """Called after a new PDF is indexed, so /api/chat immediately sees the new content
+    without needing the server to restart."""
+    global vectorstore
+    vectorstore = FAISS.load_local(INDEX_DIR, embeddings, allow_dangerous_deserialization=True)
 
 llm = ChatGoogleGenerativeAI(model="gemini-3.1-flash-lite", google_api_key=os.getenv("GOOGLE_API_KEY"))
 

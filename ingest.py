@@ -46,5 +46,32 @@ def main():
     vectorstore.save_local(INDEX_DIR)
     print(f"Index saved to {INDEX_DIR}/")
 
+def add_pdf_to_index(file_path, index_dir=INDEX_DIR):
+    """Incrementally add a single new PDF's content into the existing FAISS index,
+    without touching or rebuilding what's already indexed."""
+    loader = PyPDFLoader(file_path)
+    docs = loader.load()
+    if not docs:
+        raise ValueError("No readable text found in this PDF.")
+
+    splitter = RecursiveCharacterTextSplitter(chunk_size=800, chunk_overlap=100)
+    chunks = splitter.split_documents(docs)
+
+    embeddings = GoogleGenerativeAIEmbeddings(
+        model="models/gemini-embedding-001",
+        google_api_key=os.getenv("GOOGLE_API_KEY"),
+    )
+
+    vectorstore = FAISS.load_local(index_dir, embeddings, allow_dangerous_deserialization=True)
+
+    batch_size = 20
+    for i in range(0, len(chunks), batch_size):
+        batch = chunks[i:i + batch_size]
+        vectorstore.add_documents(batch)
+        if i + batch_size < len(chunks):
+            time.sleep(15)  # stay under the free-tier embedding rate limit
+
+    vectorstore.save_local(index_dir)
+    return len(chunks)
 if __name__ == "__main__":
     main()
